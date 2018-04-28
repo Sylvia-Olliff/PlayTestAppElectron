@@ -1,6 +1,6 @@
 'use strict';
 
-const WEAPONS = ['Club', 'Dagger', 'Dart', 'Gauntlet', 'HeavyCrossbow', 'HeavyMace', 'Javelin', 
+export const WEAPONS = ['Club', 'Dagger', 'Dart', 'Gauntlet', 'HeavyCrossbow', 'HeavyMace', 'Javelin', 
                  'LightCrossbow', 'LightMace', 'Longspear', 'Morningstar', 'PunchingDagger', 
                  'Quarterstaff', 'Shortspear', 'Sickle', 'Sling', 'Spear', 'SpikedGauntlet', 
                  'UnarmedStrike', 'ArmorSpikes', 'Battleaxe', 'CompositeLongbow', 'CompositeShortbow',
@@ -14,7 +14,7 @@ const WEAPONS = ['Club', 'Dagger', 'Dart', 'Gauntlet', 'HeavyCrossbow', 'HeavyMa
                  'RepeatingLightCrossbow', 'Sai', 'Shuriken', 'Siangham', 'SpikedChain',
                  'TwoBladedSword', 'Whip'];
 
-const FEATS = ['AbilityFocus', 'Acrobatic', 'Agile', 'Alertness', 
+export const FEATS = ['AbilityFocus', 'Acrobatic', 'Agile', 'Alertness', 
                'AlignedAttack', 'ArmorSkin', 'Athletic', 'Autonomous', 'BaneOfEnemies', 
                'DeathOfEnemies', 'BlindFight', 'BlindSight', 'BlindingSpeed', 'BodyFuel', 
                'BonusDomain', 'BoostConstruct', 'BulwarkOfDefense', 'CloakDance', 'ClosedMind', 
@@ -70,12 +70,15 @@ const FEATS = ['AbilityFocus', 'Acrobatic', 'Agile', 'Alertness',
                'GreaterWeaponSpecialization', 'WidenAuraOfCourage', 'WidenAuraOfDespair', 'WidenSpell', 
                'WildTalent', 'WoundingAttack'];
 
-const CLASSES = ['Barbarian', 'Bard', 'Cleric', 'Druid', 'Fighter', 'Monk', 'Paladin', 'Ranger', 'Rogue', 'Sorcerer', 'Wilder', 'Wizard'];
+export const CLASSES = ['Barbarian', 'Bard', 'Cleric', 'Druid', 'Fighter', 'Monk', 'Paladin', 'Ranger', 'Rogue', 'Sorcerer', 'Wilder', 'Wizard'];
 
-const PRESTIGE_CLASSES = ['ArcaneArcher', 'ArcaneTrickster', 'Archmage', 'Assassin', 'Blackguard', 'DragonDisciple', 'Duelist', 'DwarvenDefender', 'EldritchKnight', 'Loremaster', 'MysticTheurge', 'Shadowdancer', 'Slayer', 'Thaumaturgist'];
+export const PRESTIGE_CLASSES = ['ArcaneArcher', 'ArcaneTrickster', 'Archmage', 'Assassin', 'Blackguard', 'DragonDisciple', 'Duelist', 'DwarvenDefender', 'EldritchKnight', 'Loremaster', 'MysticTheurge', 'Shadowdancer', 'Slayer', 'Thaumaturgist'];
 
-const ARMOR = ['ChainShirt', 'LeatherArmor', 'PaddedArmor', 'StuddedLeatherArmor', 'Breastplate', 
+export const RACES = [''];
+
+export const ARMOR = ['ChainShirt', 'LeatherArmor', 'PaddedArmor', 'StuddedLeatherArmor', 'Breastplate', 
                'Chainmail', 'HideArmor', 'ScaleMail', 'BandedMail', 'FullPlateArmor', 'HalfPlateArmor', 'SplintMail'];
 
-const SHIELDS = ['Buckler', 'HeavyShield', 'LightShield', 'TowerShield'];
+export const SHIELDS = ['Buckler', 'HeavyShield', 'LightShield', 'TowerShield'];
 
+export const STATUS_EFFECTS = [''];
