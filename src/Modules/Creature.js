@@ -1,22 +1,26 @@
 'use strict';
 import { WEAPONS, CLASSES, RACES, FEATS, ARMOR, SHIELDS, STATUS_EFFECTS } from './Utils/Constants';
 /**
- * @param {string} name                     - Creature Name used for reporting purposes
- * @param {Object} stats                    - Creature Base Attributes
- * @param {int}    stats.STR                - Strength
- * @param {int}    stats.DEX                - Dexterity 
- * @param {int}    stats.CON                - Consititution
- * @param {int}    stats.INT                - Intelligence
- * @param {int}    stats.WIS                - Wisdom
- * @param {int}    stats.CHA                - Charisma
- * @param {Object} details                  - details (Class and Equipment)
- * @param {Class}  details.Class            - Class (Monster or Character)
- * @param {Race}   details.Race             - Race (either Player or Monster)
- * @param {Object} details.Equipment        - Equipment (Weapons and Armor)
- * @param {Weapon} details.Equipment.Weapon - Weapons
- * @param {Armor} details.Equipment.Armor   - Armor (includes shields)
+ * Creature base
+ * @abstract
  */
 export default class Creature {
+  /**
+ * @param {!string} name                     - Creature Name used for reporting purposes
+ * @param {object}  stats                    - Creature Base Attributes
+ * @param {!number} stats.STR                - Strength
+ * @param {!number} stats.DEX                - Dexterity 
+ * @param {!number} stats.CON                - Consititution
+ * @param {!number} stats.INT                - Intelligence
+ * @param {!number} stats.WIS                - Wisdom
+ * @param {!number} stats.CHA                - Charisma
+ * @param {object}  details                  - details (Class and Equipment)
+ * @param {Class}   details.Class            - Class (Monster or Character)
+ * @param {Race}    details.Race             - Race (either Player or Monster)
+ * @param {object}  details.Equipment        - Equipment (Weapons and Armor)
+ * @param {Weapon}  details.Equipment.Weapon - Weapons
+ * @param {Armor}   details.Equipment.Armor  - Armor (includes shields)
+ */
   constructor(name, stats, details) {
     this.name = name;
 
@@ -36,10 +40,23 @@ export default class Creature {
     this.totalWIS = this.WIS;
     this.totalCHA = this.CHA;
 
-    //These are modified by statusEffects and used to calculate current saves and checks
+    // These are modified by statusEffects and used to calculate current saves and checks
     this.modFORT = 0;
     this.modREF = 0;
     this.modWILL = 0;
+
+    // Resistances and Immunities (these are initialized for prototyping)
+    this.dmgResist = {};
+    this.dmgTypeResist = {};
+    this.dmgTypeImmune = [];
+    this.spellResist;
+
+    // health stuff
+    this.maxHP;
+    this.currentHP
+
+    // Basic Attack Bonus
+    this.BAB;
 
     this.statusEffects = [];
 
@@ -51,102 +68,111 @@ export default class Creature {
       race: false
     }
 
+    for (let stat of stats) {
+      if (!stat) this.readyCheckList.stats = false; return;
+    }
+
+    let creature = this;
     if (details) {
       if (details.Class) {
         if (CLASSES.includes(details.Class.name)) { 
-          this.Class = details.Class;
-          let hitpoints = 0;
-          for (let i = 0; i < this.Class.hitDice; i += 1) {
-            hitpoints += Math.floor(Math.random * this.Class.hitDiceType) + 1;
-          }
-          this.HP = hitpoints;
-          this.BAB = this.Class.BAB;
+          creature.Class = details.Class;
+          creature.Class.init(creature);
+          // let hitpoints = 0;
+          // for (let i = 0; i < this.Class.hitDice; i += 1) {
+          //   hitpoints += Math.floor(Math.random * this.Class.hitDiceType) + 1;
+          // }
+          // this.HP = hitpoints;
+          // this.currentHP = this.HP;
+          // this.BAB = this.Class.BAB;
         }
       }
       if (details.Equipment) {
         const equip = details.Equipment;
         if (equip.Armor && ARMOR.includes(equip.Armor.name)) {
-          this.Armor = equip.Armor;
+          creature.Armor = equip.Armor;
         }
         if (equip.Weapon && WEAPONS.include(equip.Weapon.name)) {
-          this.Weapon = equip.Weapon;
+          creature.Weapon = equip.Weapon;
         }
         if (equip.Shield && SHIELDS.include(equip.Shield.name)) {
-          this.Shield = equip.Shield;
+          creature.Shield = equip.Shield;
         }
       }
-      if (details.Weapon && !this.Weapon) {
-        if (details.Weapon && this.Class) {
-          if (WEAPONS.includes(details.Weapon.name) && this.Class.acceptedWeapons.includes(details.Weapon.name)) {
-            this.Weapon = details.Weapon;
+      if (details.Weapon && !creature.Weapon) {
+        if (details.Weapon && creature.Class) {
+          if (WEAPONS.includes(details.Weapon.name) && creature.Class.acceptedWeapons.includes(details.Weapon.name)) {
+            creature.Weapon = details.Weapon;
           } else {
-            this.Weapon = null;
-            this.InvalidWeapon = true;
+            creature.Weapon = null;
+            creature.InvalidWeapon = true;
           }
-        } else if (WEAPONS.includes(details.Weapon.name)) this.Weapon = details.Weapon;
+        } else if (WEAPONS.includes(details.Weapon.name)) creature.Weapon = details.Weapon;
       }
       if (details.Race) {
-        if (RACES.includes(details.Race)) {
-          this.Race = details.Race.name;
-          if (this.Race.statIncreases.length > 0) {
-            for (let statInc in this.Race.statIncreases) {
-              this[statInc] += this.Race.statIncreases[statInc]
-            }
-          }
-          if (this.Race.statDecreases.length > 0) {
-            for (let statDec in this.Race.statDecreases) {
-              this[statDec] -= this.Race.statDecreases[statDec]
-            }
-          }
-          if (this.Race.NatArmor && this.Race.NatArmor > 0) {
-            if (this.Armor) this.Armor.NatArmor += this.Race.NatArmor;
-            else this.Armor = { NatArmor: this.Race.NatArmor };
-          }
+        if (RACES.includes(details.Race.name)) {
+          creature.Race = details.Race;
+          creature.Race.init(creature);
+          // if (this.Race.statIncreases.length > 0) {
+          //   for (let statInc in this.Race.statIncreases) {
+          //     this[statInc] += this.Race.statIncreases[statInc]
+          //   }
+          // }
+          // if (this.Race.statDecreases.length > 0) {
+          //   for (let statDec in this.Race.statDecreases) {
+          //     this[statDec] -= this.Race.statDecreases[statDec]
+          //   }
+          // }
+          // if (this.Race.NatArmor && this.Race.NatArmor > 0) {
+          //   if (this.Armor) this.Armor.NatArmor += this.Race.NatArmor;
+          //   else this.Armor = { NatArmor: this.Race.NatArmor };
+          // }
         } else {
-          this.Race = null;
-          this.InvalidRace = true;
+          creature.Race = null;
+          creature.InvalidRace = true;
         }
       }
       // TODO: Test for feat prereqs being met
       if (details.Feats) {
-        this.Feats = [];
+        creature.Feats = [];
         details.Feats.forEach(element => {
-          if (FEATS.includes(element.name)) this.Feats.push(element);
-          else if (this.InvalidFeatsList) {
-            this.InvalidFeatsList.push(element);
+          if (FEATS.includes(element.name)) creature.Feats.push(element);
+          else if (creature.InvalidFeatsList) {
+            creature.InvalidFeatsList.push(element);
           } else {
-            this.InvalidFeatsList = [];
-            this.InvalidFeatsList.push(element);
+            creature.InvalidFeatsList = [];
+            creature.InvalidFeatsList.push(element);
           }
         });
-        if (this.Feats.length < 1) {
-          this.InvalidFeats = true;
-          this.Feats = null;
+        if (creature.Feats.length < 1) {
+          creature.InvalidFeats = true;
+          creature.Feats = null;
         }
       }
-      if (details.Armor && !this.Armor) {
-        this.Armor = details.Armor;
+      if (details.Armor && !creature.Armor) {
+        creature.Armor = details.Armor;
       }
     }
   }
 
   get stats() {
+    let creature = this;
     return () => { 
       return {
-        STR: this.totalSTR,
-        DEX: this.totalDEX,
-        CON: this.totalCON,
-        INT: this.totalINT,
-        WIS: this.totalWIS,
-        CHA: this.totalCHA
+        STR: creature.totalSTR,
+        DEX: creature.totalDEX,
+        CON: creature.totalCON,
+        INT: creature.totalINT,
+        WIS: creature.totalWIS,
+        CHA: creature.totalCHA
       };
     }
   }
 
   /**
    * 
-   * @param {string} stat - stat name
-   * @param {int} value 
+   * @param {!string} stat - stat name
+   * @param {!number} value 
    */
   setStat(stat, value) {
     const statName = `total${stat}`;
@@ -154,24 +180,26 @@ export default class Creature {
   }
 
   get saves() {
+    let creature = this;
     return () => {
       return {
-        FORT: this.FORT + this.modFORT + this.statBonus('totalCON'),
-        REF: this.REF + this.modREF + this.statBonus('totalDEX'),
-        WILL: this.WILL + this.modWILL + this.statBonus('totalWIS')
+        FORT: creature.FORT + creature.modFORT + creature.statBonus('CON'),
+        REF: creature.REF + creature.modREF + creature.statBonus('DEX'),
+        WILL: creature.WILL + creature.modWILL + creature.statBonus('WIS')
       }
     };
   }
 
   /**
    * 
-   * @param {string} stat - stat name 
+   * @param {!string} stat - stat name 
    */
   statBonus(stat) {
     const statName = `total${stat}`;
+    let creature = this;
     return () => {
-      if(this[statName]) { 
-        return { bonus: (this[statName] / 2) - 5 };
+      if (creature[statName]) { 
+        return { bonus: (creature[statName] / 2) - 5 };
       } 
       return { bonus: false };
     };
@@ -179,8 +207,8 @@ export default class Creature {
 
   /**
    * 
-   * @param {string} stat - stat name
-   * @param {int} value - increment amount
+   * @param {!string} stat - stat name
+   * @param {!number} value - increment amount
    */
   incrementStat(stat, value) {
     const statName = `total${stat}`;
@@ -189,8 +217,8 @@ export default class Creature {
 
   /**
    * 
-   * @param {string} stat - stat name
-   * @param {int} value - decrement amount
+   * @param {!string} stat - stat name
+   * @param {!number} value - decrement amount
    */
   decrementStat(stat, value) {
     if (this[stat]) {
@@ -207,56 +235,57 @@ export default class Creature {
 
   /**
    * 
-   * @param {string} type - (standard, flat, touch)
+   * @param {!string} type - (standard, flat, touch)
    */
   armorClass(type) {
+    let creature = this;
     return () => {
       let armorClass = 10;
       
       switch (type.toLowerCase()) {
         case 'standard':    
-          if (this.Armor) {
-            armorClass += this.Armor.Value;
-            armorClass += this.Armor.NatArmor;
-            if (this.Armor.MaxDex) {
-              if (this.statusEffects.dodgeACBonus) {
-                if ((this.statBonus('DEX') + this.statusEffects.dodgeACBonus) < this.Armor.MaxDex) {
-                  armorClass += this.statBonus('DEX');
-                  armorClass += this.statusEffects.dodgeACBonus;
+          if (creature.Armor) {
+            armorClass += creature.Armor.Value;
+            armorClass += creature.Armor.NatArmor;
+            if (creature.Armor.MaxDex) {
+              if (creature.statusEffects.dodgeACBonus) {
+                if ((creature.statBonus('DEX') + creature.statusEffects.dodgeACBonus) < creature.Armor.MaxDex) {
+                  armorClass += creature.statBonus('DEX');
+                  armorClass += creature.statusEffects.dodgeACBonus;
                 } else {
-                  armorClass += this.Armor.MaxDex;
+                  armorClass += creature.Armor.MaxDex;
                 }
               } else {
-                if (this.statBonus('DEX') < this.Armor.MaxDex) {
-                  armorClass += this.statBonus('DEX');
+                if (creature.statBonus('DEX') < creature.Armor.MaxDex) {
+                  armorClass += creature.statBonus('DEX');
                 } else {
-                  armorClass += this.Armor.MaxDex;
+                  armorClass += creature.Armor.MaxDex;
                 }
               }
             } else {
-              if (this.statusEffects.dodgeACBonus) armorClass += this.statusEffects.dodgeACBonus;
-              armorClass += this.statBonus('DEX');
+              if (creature.statusEffects.dodgeACBonus) armorClass += creature.statusEffects.dodgeACBonus;
+              armorClass += creature.statBonus('DEX');
             }
-            armorClass += this.Armor.ShieldValue;
+            armorClass += creature.Armor.ShieldValue;
           } else {
-            armorClass += this.statBonus('DEX');
+            armorClass += creature.statBonus('DEX');
           }
-          if (this.statusEffects.defACBonus) armorClass += this.statusEffects.defACBonus;
+          if (creature.statusEffects.defACBonus) armorClass += creature.statusEffects.defACBonus;
           break;
         
         case 'flat':
-          if (this.Armor) {
-            armorClass += this.Armor.Value;
-            armorClass += this.Armor.NatArmor;
-            armorClass += this.Armor.ShieldValue;
-            if (this.statusEffects.defACBonus) armorClass += this.statusEffects.defACBonus;
+          if (creature.Armor) {
+            armorClass += creature.Armor.Value;
+            armorClass += creature.Armor.NatArmor;
+            armorClass += creature.Armor.ShieldValue;
+            if (creature.statusEffects.defACBonus) armorClass += creature.statusEffects.defACBonus;
           }
           break;
   
         case 'touch':
-          armorClass += this.statBonus('DEX');
-          if (this.statusEffects.defACBonus) armorClass += this.statusEffects.defACBonus;
-          if (this.statusEffects.dodgeACBonus) armorClass += this.statusEffects.dodgeACBonus;
+          armorClass += creature.statBonus('DEX');
+          if (creature.statusEffects.defACBonus) armorClass += creature.statusEffects.defACBonus;
+          if (creature.statusEffects.dodgeACBonus) armorClass += creature.statusEffects.dodgeACBonus;
           break;
       }
       return armorClass;
@@ -265,27 +294,60 @@ export default class Creature {
 
   /**
    * 
-   * @param {StatusEffect} StatusEffect 
+   * @param {Object<string, any>} StatusEffect 
    */
   addStatusEffect(StatusEffect) {
     if (STATUS_EFFECTS.includes(StatusEffect)) {
-      StatusEffect.immediateTick(this);
+      StatusEffect.immediateTick(creature);
       this.statusEffects.push(StatusEffect);
     }
   }
 
+  /**
+   * Increment all current status effects
+   */
   statusRoundTick() {
+    let creature = this;
     return new Promise((resolve, reject) => {
-      const tasks = this.statusEffects.map( async (status) => {
+      const tasks = creature.statusEffects.map(async (status) => {
         if (status.duration > 1) {
-          status.roundTick(this);
+          status.roundTick(creature);
           status.duration -= 1;
         } else if (status.duration === 1) {
-          status.finalTick(this);
+          status.finalTick(creature);
           status.duration -= 1;
         }
         return status;
       });
+
+      Promise.all(tasks).then((result) => {
+        console.log(result);
+        resolve();
+      })
     });
+  }
+
+  /**
+   * 
+   * @param {object}  dmg - damage object
+   * @param {!string} dmg.type - primary damage type
+   * @param {!number} dmg.amount - amount of damage
+   */
+  takeDamage(dmg) {
+    let damageTaken = 0;
+    if(this.dmgTypeImmune[dmg.type]) return;
+    if(this.dmgTypeResist[dmg.type]) {
+      if (this.dmgTypeResist[dmg.type].amount < 1) {
+        damageTaken += dmg.amount - ( this.dmgTypeResist[dmg.type].amount * dmg.amount );
+      } else {
+        damageTaken += dmg.amount - this.dmgTypeResist[dmg.type].amount;
+      }
+    }
+    if(this.dmgResist && this.dmgResist.negationType !== dmg.type) {
+      damageTaken -= this.dmgResist.amount;
+    }
+    if (damageTaken > 0 && !(damageTaken < 1)) {
+      this.currentHP -= damageTaken;
+    }
   }
 }

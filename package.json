@@ -14,6 +14,9 @@
   "keywords": [],
   "author": "titanjc",
   "license": "MIT",
+  "quokka": {
+    "babel": true
+  },
   "config": {
     "forge": {
       "make_targets": {
@@ -47,6 +50,7 @@
     }
   },
   "dependencies": {
+    "bluebird": "^3.5.1",
     "electron-compile": "^6.4.2",
     "electron-devtools-installer": "^2.2.3",
     "electron-squirrel-startup": "^1.0.0",
